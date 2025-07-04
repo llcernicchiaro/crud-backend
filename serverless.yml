@@ -1,0 +1,24 @@
+service: crud-backend
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: dev
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+
+defaults:
+  function:
+    timeout: 10
+
+functions:
+  hello:
+    handler: src/handler.hello
+    events:
+      - httpApi:
+          path: /hello
+          method: get
