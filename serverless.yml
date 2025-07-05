@@ -6,16 +6,14 @@ provider:
   runtime: nodejs18.x
   region: sa-east-1
   stage: ${opt:stage, 'dev'}
+  httpApi:
+    cors: true
   environment:
     STAGE: ${self:provider.stage}
 
 plugins:
   - serverless-plugin-typescript
   - serverless-offline
-
-defaults:
-  function:
-    timeout: 10
 
 functions:
   hello:
@@ -24,4 +22,3 @@ functions:
       - httpApi:
           path: /hello
           method: get
-          cors: true

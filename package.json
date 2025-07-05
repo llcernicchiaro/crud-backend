@@ -8,9 +8,9 @@
     "prepare": "husky install",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "deploy": "serverless deploy",
     "offline": "serverless offline",
-    "dev": "nodemon --watch src --ext ts --exec \"npm run offline\""
+    "dev": "nodemon --watch src --ext ts --exec \"npm run offline\"",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
