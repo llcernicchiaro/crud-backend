@@ -8,13 +8,14 @@
     "prepare": "husky install",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
+    "deploy": "serverless deploy",
     "offline": "serverless offline",
-    "dev": "nodemon --watch src --ext ts --exec \"npm run offline\"",
-    "build": "tsc"
+    "dev": "nodemon --watch src --ext ts --exec \"npm run offline\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "type": "module",
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
