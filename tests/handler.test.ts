@@ -1,4 +1,4 @@
-import { hello } from './handler';
+import { hello } from '../src/handler';
 import type {
   APIGatewayProxyEvent,
   Context,
