@@ -38,7 +38,7 @@ jobs:
         run: npm run test
 
       - name: Report coverage
-        uses: davelosert/jest-coverage-report-action@v2
+        uses: ArtiomTr/jest-coverage-report-action@v2.3.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           threshold: 70
