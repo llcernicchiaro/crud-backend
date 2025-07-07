@@ -1,0 +1,13 @@
+{
+  "release-type": "node",
+  "package-name": "crud-backend",
+  "bump-minor-pre-major": true,
+  "changelog-types": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "chore", "section": "Maintenance" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "refactor", "section": "Refactors" },
+    { "type": "test", "section": "Tests" }
+  ]
+}
