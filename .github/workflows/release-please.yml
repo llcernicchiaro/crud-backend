@@ -17,4 +17,4 @@ jobs:
       - name: Run release-please
         uses: google-github-actions/release-please-action@v4.1.0
         with:
-          config-file: .release-please-config.json
+          config-file: .release-please.config.json
