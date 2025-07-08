@@ -24,7 +24,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: sa-east-1
+          aws-region: us-east-1
 
       - name: Use Node.js
         uses: actions/setup-node@v4.0.3
@@ -52,7 +52,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: sa-east-1
+          aws-region: us-east-1
 
       - name: Use Node.js
         uses: actions/setup-node@v4.0.3
