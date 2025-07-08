@@ -16,7 +16,7 @@ jobs:
           ref: main
 
       - name: Create Pull Request to develop
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7.0.8
         with:
           token: ${{ secrets.GH_PAT }}
           commit-message: 'chore(develop): sync main'
