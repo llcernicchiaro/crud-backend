@@ -9,6 +9,9 @@ jobs:
   release:
     name: Create release PR
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Run release-please
         uses: google-github-actions/release-please-action@v4
