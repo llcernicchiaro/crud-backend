@@ -1,0 +1,26 @@
+name: Sync Main to Develop
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    if: github.actor != 'release-please[bot]'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.7
+        with:
+          ref: main
+
+      - name: Create Pull Request to develop
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
+          commit-message: 'chore(develop): sync main'
+          title: 'chore(develop): sync main'
+          body: 'Syncing main branch with develop after release.'
+          branch: chore/sync-main-to-develop
+          base: develop
