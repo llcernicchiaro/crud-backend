@@ -36,31 +36,40 @@ The following endpoints are available:
 
 - **GET /hello**: A sample endpoint that returns a "Hello, world!" message.
 
-## Deployment
+## Development and Release Workflow
 
-Deployment is automated via GitHub Actions. The `deploy.yml` workflow handles the deployment to different environments based on the branch:
+This project uses a fully automated CI/CD pipeline for development, versioning, and deployment. Below is the process for contributing to the project.
 
-- **Development (`dev`):** Pushing to the `develop` branch will trigger a deployment to the `dev` stage.
-- **Production (`prod`):** Pushing to the `main` branch will trigger a deployment to the `prod` stage.
+### 1. Local Development
 
-## Contributing
+- **Branching**: All new work should be done on a feature branch created from `develop`.
+- **Commits**: Commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) standard. This is crucial for the automated versioning to work correctly.
 
-This project follows the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. Please ensure your commit messages adhere to this format.
+  A commit message consists of a **header**, a **body**, and a **footer**.
 
-### Commit Message Format
+  ```
+  <type>[optional scope]: <description>
 
-A commit message consists of a **header**, a **body**, and a **footer**.
+  [optional body]
 
-```
-<type>[optional scope]: <description>
+  [optional footer]
+  ```
 
-[optional body]
+  - **type**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, etc.
+  - **scope**: Optional, the scope of the change (e.g., `api`, `db`, `auth`).
+  - **description**: A short description of the change.
 
-[optional footer]
-```
+- **Pull Requests**: When a feature is complete, open a pull request from your feature branch to the `develop` branch.
 
-- **type**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, etc.
-- **scope**: Optional, the scope of the change (e.g., `api`, `db`, `auth`).
-- **description**: A short description of the change.
+### 2. Continuous Integration and Deployment
 
-For more details, please refer to the [Conventional Commits website](https://www.conventionalcommits.org/en/v1.0.0/).
+- **CI Pipeline**: When a pull request is opened to `develop` or `main`, a CI workflow is triggered. This workflow runs linting, type checking, builds the code, and runs tests to ensure code quality and stability.
+- **Deployment to Development**: Once a pull request is merged into the `develop` branch, the latest changes are automatically deployed to the **`dev`** environment.
+
+### 3. Production Release
+
+- **Merging to `main`**: To start a production release, a pull request is created from `develop` to `main`.
+- **Automated Versioning**: When the pull request is merged into `main`, the `release-please` action is triggered. It analyzes the commit history, determines the next version number, and creates a new "Release PR" with the updated version in `package.json` and a new `CHANGELOG.md`.
+- **Release PR Approval**: The Release PR must be reviewed and merged. This triggers the final step.
+- **Sync `develop`**: After the Release PR is merged into `main`, merge `main` back into `develop` to keep `develop` up-to-date with the latest versioning and changelog changes.
+- **Deployment to Production**: Once the Release PR is merged, the new version is deployed to the **`prod`** environment, and a new release is created in GitHub.
