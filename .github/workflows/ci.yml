@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - develop
-  pull_request:
+  pull_request_target:
     branches:
       - main
       - develop
@@ -17,14 +17,20 @@ jobs:
       checks: write
       pull-requests: write
       contents: write
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/checkout@v4.1.7
         with:
-          node-version: '18'
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4.0.3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
