@@ -1,0 +1,27 @@
+name: Sync Main to Develop
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Only run if the push was not from the release-please bot
+    if: github.actor != 'release-please[bot]'
+    steps:
+      - name: Checkout develop branch
+        uses: actions/checkout@v4.1.7
+        with:
+          ref: develop
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Merge main into develop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge origin/main -m "Merge main into develop after release"
+
+      - name: Push changes to develop
+        run: git push origin develop

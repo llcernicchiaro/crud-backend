@@ -18,3 +18,4 @@ jobs:
         with:
           release-type: node
           package-name: crud-backend
+          skip-commit-message: "^chore(main): release [0-9]+\.[0-9]+\.[0-9]+(\S*)"
