@@ -5,17 +5,16 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release:
     name: Create release PR
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - name: Run release-please
         uses: google-github-actions/release-please-action@v4.1.0
         with:
-          release-type: node
-          package-name: crud-backend
-          skip-commit-message: "^chore(main): release [0-9]+\.[0-9]+\.[0-9]+(\S*)"
+          config-file: .release-please-config.json

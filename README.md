@@ -71,4 +71,5 @@ This project uses a fully automated CI/CD pipeline for development, versioning, 
 - **Merging to `main`**: To start a production release, a pull request is created from `develop` to `main`.
 - **Automated Versioning**: When the pull request is merged into `main`, the `release-please` action is triggered. It analyzes the commit history, determines the next version number, and creates a new "Release PR" with the updated version in `package.json` and a new `CHANGELOG.md`.
 - **Release PR Approval**: The Release PR must be reviewed and merged. This triggers the final step.
+- **Sync `develop`**: After the Release PR is merged into `main`, merge `main` back into `develop` to keep `develop` up-to-date with the latest versioning and changelog changes.
 - **Deployment to Production**: Once the Release PR is merged, the new version is deployed to the **`prod`** environment, and a new release is created in GitHub.
