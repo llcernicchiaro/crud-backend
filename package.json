@@ -11,6 +11,7 @@
     "prepare": "husky install",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
+    "build": "tsc",
     "dev": "nodemon -e ts,yml --exec \"sls offline start --httpPort=3001\""
   },
   "dependencies": {
