@@ -77,6 +77,13 @@ describe('update handler', () => {
           TableName: mockTableName,
           Key: { id: validUuid },
           UpdateExpression: expect.any(String),
+          ExpressionAttributeNames: expect.objectContaining({
+            '#description': 'description',
+            '#model': 'model',
+            '#name': 'name',
+            '#status': 'status',
+            '#temperature': 'temperature',
+          }),
           ExpressionAttributeValues: expect.objectContaining({
             ':name': 'Updated Agent Name',
             ':description': 'Updated description',
