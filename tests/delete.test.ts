@@ -1,4 +1,4 @@
-import { handler } from '../src/handlers/get';
+import { handler } from '../src/handlers/delete';
 import { dynamoDB } from '../src/db/client';
 import {
   APIGatewayProxyEvent,
@@ -15,11 +15,7 @@ jest.mock('../src/db/client', () => ({
   },
 }));
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(),
-}));
-
-describe('get handler', () => {
+describe('delete handler', () => {
   const mockTableName = 'test-agents-table';
   const validUuid = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; // A valid UUID for testing
 
@@ -29,28 +25,17 @@ describe('get handler', () => {
 
   beforeEach(() => {
     (dynamoDB.send as jest.Mock).mockClear();
-    // No need to mock uuidv4 here as it's not directly used in the handler logic for get
   });
 
-  it('should return an agent successfully', async () => {
-    const mockAgent = {
-      id: validUuid,
-      name: 'Test Agent',
-      description: 'A test agent',
-      model: 'gpt-4',
-      status: 'active',
-      temperature: 0.7,
-      createdAt: new Date().toISOString(),
-    };
-
-    (dynamoDB.send as jest.Mock).mockResolvedValueOnce({ Item: mockAgent });
+  it('should delete an agent successfully', async () => {
+    (dynamoDB.send as jest.Mock).mockResolvedValueOnce({});
 
     const mockEvent: APIGatewayProxyEvent = {
       pathParameters: { id: validUuid },
       body: null,
       headers: {},
       multiValueHeaders: {},
-      httpMethod: 'GET',
+      httpMethod: 'DELETE',
       isBase64Encoded: false,
       path: `/agents/${validUuid}`,
       queryStringParameters: null,
@@ -72,23 +57,28 @@ describe('get handler', () => {
         input: {
           TableName: mockTableName,
           Key: { id: validUuid },
+          ConditionExpression: 'attribute_exists(id)',
         },
       }),
     );
 
-    expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual(mockAgent);
+    expect(response.statusCode).toBe(204);
+    expect(response.body).toBe('');
   });
 
-  it('should return 404 if agent not found', async () => {
-    (dynamoDB.send as jest.Mock).mockResolvedValueOnce({ Item: undefined });
+  it('should return 404 if agent not found for deletion', async () => {
+    (dynamoDB.send as jest.Mock).mockRejectedValueOnce(
+      Object.assign(new Error('ConditionalCheckFailedException'), {
+        name: 'ConditionalCheckFailedException',
+      }),
+    );
 
     const mockEvent: APIGatewayProxyEvent = {
       pathParameters: { id: validUuid },
       body: null,
       headers: {},
       multiValueHeaders: {},
-      httpMethod: 'GET',
+      httpMethod: 'DELETE',
       isBase64Encoded: false,
       path: `/agents/${validUuid}`,
       queryStringParameters: null,
@@ -105,14 +95,6 @@ describe('get handler', () => {
     )) as APIGatewayProxyResult;
 
     expect(dynamoDB.send).toHaveBeenCalledTimes(1);
-    expect(dynamoDB.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        input: {
-          TableName: mockTableName,
-          Key: { id: validUuid },
-        },
-      }),
-    );
     expect(response.statusCode).toBe(404);
     expect(JSON.parse(response.body)).toEqual({ message: 'Agent not found' });
   });
@@ -123,7 +105,7 @@ describe('get handler', () => {
       body: null,
       headers: {},
       multiValueHeaders: {},
-      httpMethod: 'GET',
+      httpMethod: 'DELETE',
       isBase64Encoded: false,
       path: '/agents/',
       queryStringParameters: null,
@@ -143,10 +125,9 @@ describe('get handler', () => {
     expect(response.statusCode).toBe(400);
     expect(JSON.parse(response.body)).toHaveProperty(
       'message',
-      'Validation Error',
+      'Invalid agent ID',
     );
-    expect(JSON.parse(response.body)).toHaveProperty('errors');
-    expect(JSON.parse(response.body).errors[0]).toHaveProperty('path', ['id']);
+    expect(JSON.parse(response.body)).toHaveProperty('details.fieldErrors.id');
   });
 
   it('should return 400 if ID is not a valid UUID', async () => {
@@ -155,7 +136,7 @@ describe('get handler', () => {
       body: null,
       headers: {},
       multiValueHeaders: {},
-      httpMethod: 'GET',
+      httpMethod: 'DELETE',
       isBase64Encoded: false,
       path: '/agents/invalid-uuid',
       queryStringParameters: null,
@@ -175,9 +156,11 @@ describe('get handler', () => {
     expect(response.statusCode).toBe(400);
     expect(JSON.parse(response.body)).toHaveProperty(
       'message',
-      'Validation Error',
+      'Invalid agent ID',
     );
-    expect(JSON.parse(response.body).errors[0]).toHaveProperty('path', ['id']);
+    expect(JSON.parse(response.body).details.fieldErrors.id[0]).toEqual(
+      'Invalid uuid',
+    );
   });
 
   it('should return 500 if DynamoDB operation fails', async () => {
@@ -190,7 +173,7 @@ describe('get handler', () => {
       body: null,
       headers: {},
       multiValueHeaders: {},
-      httpMethod: 'GET',
+      httpMethod: 'DELETE',
       isBase64Encoded: false,
       path: `/agents/${validUuid}`,
       queryStringParameters: null,

@@ -19,5 +19,14 @@ export const createAgentInputSchema = z.object({
   temperature: z.number().min(0).max(1).default(0.7).optional(),
 });
 
+export const updateAgentInputSchema = agentSchema
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .partial();
+
 export type Agent = z.infer<typeof agentSchema>;
 export type CreateAgentInput = z.infer<typeof createAgentInputSchema>;
+export type UpdateAgentInput = z.infer<typeof updateAgentInputSchema>;

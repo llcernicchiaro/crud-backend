@@ -1,0 +1,104 @@
+{
+  "info": {
+    "_postman_id": "a8b8c8d8-e8f8-g8h8-i8j8-k8l8m8n8o8p8",
+    "name": "CRUD Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Agent",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"My Awesome Agent\",\n  \"description\": \"This is a test agent.\",\n  \"model\": \"gpt-4\",\n  \"status\": \"active\",\n  \"temperature\": 0.8\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/agents",
+          "host": ["{{baseUrl}}"],
+          "path": ["agents"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Agent",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/agents/{{agentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["agents", "{{agentId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Agents",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/agents",
+          "host": ["{{baseUrl}}"],
+          "path": ["agents"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Agent",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"My Updated Awesome Agent\",\n  \"description\": \"This is an updated test agent.\",\n  \"model\": \"claude\",\n  \"status\": \"inactive\",\n  \"temperature\": 0.5\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/agents/{{agentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["agents", "{{agentId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Agent",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/agents/{{agentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["agents", "{{agentId}}"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/dev",
+      "type": "string"
+    },
+    {
+      "key": "agentId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

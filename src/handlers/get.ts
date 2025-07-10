@@ -1,44 +1,55 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
+import { z } from 'zod';
 
 import { dynamoDB } from '../db/client';
+import { agentSchema, Agent } from '../models/Agent';
+import { logger } from '../utils/logger';
+import { errorHandler } from '../utils/errorHandler';
+import { NotFoundError } from '../utils/errors';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
+    logger.info({
+      message: 'Fetching agent',
+      agentId: event.pathParameters?.id,
+    });
+
     const { id } = event.pathParameters || {};
 
-    if (!id) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: 'Missing agent ID' }),
-      };
+    let validatedId: string;
+    try {
+      const idParam = z.object({ id: agentSchema.shape.id }).parse({ id });
+      validatedId = idParam.id;
+    } catch (error) {
+      return errorHandler(error); // Pass ZodError to errorHandler
     }
 
     const { Item } = await dynamoDB.send(
       new GetCommand({
         TableName: process.env.AGENTS_TABLE!,
         Key: {
-          id,
+          id: validatedId,
         },
       }),
     );
 
     if (!Item) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'Agent not found' }),
-      };
+      throw new NotFoundError('Agent not found');
     }
+
+    const agent: Agent = Item as Agent;
+
+    logger.info({
+      message: 'Agent fetched successfully',
+      agentId: agent.id,
+    });
 
     return {
       statusCode: 200,
-      body: JSON.stringify(Item),
+      body: JSON.stringify(agent),
     };
   } catch (error) {
-    console.error(error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Internal Server Error' }),
-    };
+    return errorHandler(error);
   }
 };
