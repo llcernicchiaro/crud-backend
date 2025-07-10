@@ -4,7 +4,7 @@ This project is a serverless CRUD backend built with Node.js, TypeScript, and th
 
 ## Prerequisites
 
-- Node.js (v18.x or later)
+- Node.js v18.x
 - npm
 - AWS account and configured credentials
 
@@ -38,12 +38,12 @@ The following endpoints are available:
 
 ## Development and Release Workflow
 
-This project uses a fully automated CI/CD pipeline for development, versioning, and deployment. Below is the process for contributing to the project.
+This project uses a fully automated CI/CD pipeline for development and deployment. Below is the process for contributing to the project.
 
 ### 1. Local Development
 
 - **Branching**: All new work should be done on a feature branch created from `develop`.
-- **Commits**: Commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) standard. This is crucial for the automated versioning to work correctly.
+- **Commits**: Commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) standard.
 
   A commit message consists of a **header**, a **body**, and a **footer**.
 
@@ -63,13 +63,6 @@ This project uses a fully automated CI/CD pipeline for development, versioning, 
 
 ### 2. Continuous Integration and Deployment
 
-- **CI Pipeline**: When a pull request is opened to `develop` or `main`, a CI workflow is triggered. This workflow runs linting, type checking, builds the code, and runs tests to ensure code quality and stability.
-- **Deployment to Development**: Once a pull request is merged into the `develop` branch, the latest changes are automatically deployed to the **`dev`** environment.
-
-### 3. Production Release
-
-- **Merging to `main`**: To start a production release, a pull request is created from `develop` to `main`.
-- **Automated Versioning**: When the pull request is merged into `main`, the `release-please` action is triggered. It analyzes the commit history, determines the next version number, and creates a new "Release PR" with the updated version in `package.json` and a new `CHANGELOG.md`.
-- **Release PR Approval**: The Release PR must be reviewed and merged. This triggers the final step.
-- **Sync `develop`**: After the Release PR is merged into `main`, merge `main` back into `develop` to keep `develop` up-to-date with the latest versioning and changelog changes.
-- **Deployment to Production**: Once the Release PR is merged, the new version is deployed to the **`prod`** environment, and a new release is created in GitHub.
+- **CI Pipeline**: When a pull request is opened to `develop` or `main`, or when code is pushed to these branches, a CI workflow is triggered. This workflow runs linting, type checking, builds the code, and runs tests to ensure code quality and stability.
+- **Deployment to Development**: When changes are pushed to the `develop` branch, the latest changes are automatically deployed to the **`dev`** environment after the CI workflow succeeds.
+- **Deployment to Production**: When changes are pushed to the `main` branch, the new version is deployed to the **`prod`** environment after the CI workflow succeeds.
