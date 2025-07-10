@@ -10,15 +10,73 @@ provider:
     cors: true
   environment:
     STAGE: ${self:provider.stage}
+    AGENTS_TABLE: ${self:custom.agentsTable}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+            - dynamodb:Query
+          Resource: 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.agentsTable}'
+
+custom:
+  agentsTable: 'agents-${sls:stage}'
 
 plugins:
   - serverless-plugin-typescript
   - serverless-offline
 
+resources:
+  Resources:
+    AgentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.agentsTable}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
 functions:
-  hello:
-    handler: src/handler.hello
+  createAgent:
+    handler: src/handlers/create.handler
     events:
       - httpApi:
-          path: /hello
+          path: /agents
+          method: post
+
+  getAgent:
+    handler: src/handlers/get.handler
+    events:
+      - httpApi:
+          path: /agents/{id}
           method: get
+
+  listAgents:
+    handler: src/handlers/list.handler
+    events:
+      - httpApi:
+          path: /agents
+          method: get
+
+  updateAgent:
+    handler: src/handlers/update.handler
+    events:
+      - httpApi:
+          path: /agents/{id}
+          method: put
+
+  deleteAgent:
+    handler: src/handlers/delete.handler
+    events:
+      - httpApi:
+          path: /agents/{id}
+          method: delete

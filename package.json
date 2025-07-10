@@ -3,18 +3,24 @@
   "version": "1.1.0",
   "description": "",
   "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "scripts": {
     "test": "jest --coverage",
     "prepare": "husky install",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "offline": "serverless offline",
-    "dev": "nodemon --watch src --ext ts --exec \"npm run offline\"",
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "nodemon -e ts,yml --exec \"sls offline start --httpPort=3001\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.840.0",
+    "@aws-sdk/lib-dynamodb": "^3.840.0",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
+    "zod": "^3.25.76"
+  },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
