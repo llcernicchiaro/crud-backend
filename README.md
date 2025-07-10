@@ -34,7 +34,11 @@ This project is a serverless CRUD backend built with Node.js, TypeScript, and th
 
 The following endpoints are available:
 
-- **GET /hello**: A sample endpoint that returns a "Hello, world!" message.
+- **POST /agents**: Creates a new agent.
+- **GET /agents**: Retrieves a list of all agents.
+- **GET /agents/{id}**: Retrieves a specific agent by its ID.
+- **PUT /agents/{id}**: Updates a specific agent by its ID.
+- **DELETE /agents/{id}**: Deletes a specific agent by its ID.
 
 ## Development and Release Workflow
 
