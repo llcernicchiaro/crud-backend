@@ -12,7 +12,7 @@ import { mocked } from 'jest-mock';
 
 interface ErrorResponse {
   message: string;
-  errors?: { path: string[] }[];
+  details?: { fieldErrors: { name?: string[] } };
 }
 
 // Mock the dynamodb client and uuid
@@ -229,9 +229,9 @@ describe('create handler', () => {
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
     const errorResponse = JSON.parse(response.body) as ErrorResponse;
-    expect(errorResponse).toHaveProperty('message', 'Validation Error');
-    expect(errorResponse).toHaveProperty('errors');
-    expect(errorResponse.errors?.[0]).toHaveProperty('path', ['name']);
+    expect(errorResponse).toHaveProperty('message', 'Invalid request body');
+    expect(errorResponse).toHaveProperty('details.fieldErrors.name');
+    expect(errorResponse.details?.fieldErrors.name?.[0]).toEqual('Required');
   });
 
   it('should return 500 if DynamoDB operation fails', async () => {

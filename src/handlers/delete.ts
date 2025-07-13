@@ -1,36 +1,23 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { z } from 'zod';
 
 import { dynamoDB } from '../db/client';
 import { config } from '../config';
-import { agentSchema } from '../models/Agent';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
-import { NotFoundError, BadRequestError } from '../utils/errors';
+import { handleConditionalCheckFailedException } from '../utils/errors';
+import { validateAgentId } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     logger.info({ message: 'Deleting agent' });
 
-    const { id } = event.pathParameters ?? {};
-
-    const idParam = z.object({ id: agentSchema.shape.id });
-    const validationResult = idParam.safeParse({ id });
-
-    if (!validationResult.success) {
-      throw new BadRequestError(
-        'Invalid agent ID',
-        validationResult.error.flatten(),
-      );
-    }
+    const validatedId = validateAgentId(event);
 
     logger.info({
       message: 'Agent ID validated',
-      agentId: validationResult.data.id,
+      agentId: validatedId,
     });
-
-    const validatedId = validationResult.data.id;
 
     try {
       await dynamoDB.send(
@@ -53,13 +40,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         body: '',
       };
     } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        'name' in error &&
-        error.name === 'ConditionalCheckFailedException'
-      ) {
-        throw new NotFoundError('Agent not found');
-      }
+      handleConditionalCheckFailedException(error);
       throw error; // Re-throw other unexpected errors
     }
   } catch (error: unknown) {

@@ -11,7 +11,7 @@ import { mocked } from 'jest-mock';
 
 interface ErrorResponse {
   message: string;
-  errors?: { path: string[] }[];
+  details?: { fieldErrors: { id?: string[] } };
 }
 
 // Mock the dynamodb client
@@ -147,9 +147,9 @@ describe('get handler', () => {
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
     const errorResponse = JSON.parse(response.body) as ErrorResponse;
-    expect(errorResponse).toHaveProperty('message', 'Validation Error');
-    expect(errorResponse).toHaveProperty('errors');
-    expect(errorResponse.errors?.[0]).toHaveProperty('path', ['id']);
+    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
+    expect(errorResponse).toHaveProperty('details.fieldErrors.id');
+    expect(errorResponse.details?.fieldErrors.id?.[0]).toEqual('Required');
   });
 
   it('should return 400 if ID is not a valid UUID', async () => {
@@ -177,8 +177,8 @@ describe('get handler', () => {
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
     const errorResponse = JSON.parse(response.body) as ErrorResponse;
-    expect(errorResponse).toHaveProperty('message', 'Validation Error');
-    expect(errorResponse.errors?.[0]).toHaveProperty('path', ['id']);
+    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
+    expect(errorResponse.details?.fieldErrors.id?.[0]).toEqual('Invalid uuid');
   });
 
   it('should return 500 if DynamoDB operation fails', async () => {

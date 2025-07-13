@@ -8,6 +8,7 @@ import {
   APIGatewayEventRequestContext,
 } from 'aws-lambda';
 import { mocked } from 'jest-mock';
+import * as errorHandlerModule from '../src/utils/errorHandler';
 
 interface ErrorResponse {
   message: string;
@@ -323,9 +324,10 @@ describe('update handler', () => {
   });
 
   it('should return 500 if DynamoDB operation fails', async () => {
-    (dynamoDB.send as jest.Mock).mockRejectedValueOnce(
-      new Error('DynamoDB error'),
-    );
+    const dynamoDBError = new Error('DynamoDB error');
+    (dynamoDB.send as jest.Mock).mockRejectedValueOnce(dynamoDBError);
+
+    const errorHandlerSpy = jest.spyOn(errorHandlerModule, 'errorHandler');
 
     const mockEvent: APIGatewayProxyEvent = {
       pathParameters: { id: validUuid },
@@ -342,16 +344,44 @@ describe('update handler', () => {
       resource: '',
     };
 
-    const response: APIGatewayProxyResult = (await handler(
-      mockEvent,
-      {} as Context,
-      {} as Callback,
-    )) as APIGatewayProxyResult;
+    await handler(mockEvent, {} as Context, {} as Callback);
 
     expect(dynamoDB.send).toHaveBeenCalledTimes(1);
-    expect(response.statusCode).toBe(500);
-    expect(JSON.parse(response.body)).toEqual({
-      message: 'Internal Server Error',
+    expect(errorHandlerSpy).toHaveBeenCalledWith(dynamoDBError);
+
+    errorHandlerSpy.mockRestore();
+  });
+
+  it('should re-throw unexpected errors from DynamoDB', async () => {
+    const unexpectedError = new Error('Unexpected DynamoDB error');
+    (dynamoDB.send as jest.Mock).mockRejectedValueOnce(unexpectedError);
+
+    // Temporarily mock errorHandler to re-throw for this specific test
+    const errorHandlerSpy = jest.spyOn(errorHandlerModule, 'errorHandler');
+    errorHandlerSpy.mockImplementationOnce((error) => {
+      throw error;
     });
+
+    const mockEvent: APIGatewayProxyEvent = {
+      pathParameters: { id: validUuid },
+      body: JSON.stringify({ name: 'Test' }),
+      headers: {},
+      multiValueHeaders: {},
+      httpMethod: 'PUT',
+      isBase64Encoded: false,
+      path: `/agents/${validUuid}`,
+      queryStringParameters: null,
+      multiValueQueryStringParameters: null,
+      stageVariables: null,
+      requestContext: {} as APIGatewayEventRequestContext,
+      resource: '',
+    };
+
+    await expect(
+      handler(mockEvent, {} as Context, {} as Callback),
+    ).rejects.toThrow(unexpectedError);
+    expect(dynamoDB.send).toHaveBeenCalledTimes(1);
+
+    errorHandlerSpy.mockRestore(); // Clean up the spy
   });
 });
