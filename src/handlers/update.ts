@@ -1,58 +1,34 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { z } from 'zod';
 import { ReturnValue } from '@aws-sdk/client-dynamodb';
 
+import { config } from '../config';
 import { dynamoDB } from '../db/client';
 import {
-  agentSchema,
   Agent,
   UpdateAgentInput,
   updateAgentInputSchema,
 } from '../models/Agent';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
-import { NotFoundError, BadRequestError } from '../utils/errors';
+import {
+  BadRequestError,
+  handleConditionalCheckFailedException,
+} from '../utils/errors';
+import { validateAgentId, validateBody } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     logger.info({ message: 'Updating agent' });
 
-    const { id } = event.pathParameters || {};
-
-    const idParam = z.object({ id: agentSchema.shape.id });
-    const idValidationResult = idParam.safeParse({ id });
-
-    if (!idValidationResult.success) {
-      throw new BadRequestError(
-        'Invalid agent ID',
-        idValidationResult.error.flatten(),
-      );
-    }
-
-    const validatedId = idValidationResult.data.id;
+    const validatedId = validateAgentId(event);
 
     logger.info({ message: 'Agent ID validated', agentId: validatedId });
 
-    if (!event.body) throw new BadRequestError('Missing request body');
-
-    let parsedBody;
-    try {
-      parsedBody = JSON.parse(event.body);
-    } catch {
-      throw new BadRequestError('Invalid JSON in request body');
-    }
-
-    const validationResult = updateAgentInputSchema.safeParse(parsedBody);
-
-    if (!validationResult.success) {
-      throw new BadRequestError(
-        'Invalid request body',
-        validationResult.error.flatten(),
-      );
-    }
-
-    const validatedData: UpdateAgentInput = validationResult.data;
+    const validatedData: UpdateAgentInput = validateBody(
+      event,
+      updateAgentInputSchema,
+    );
 
     const updateExpressionParts: string[] = [];
     const expressionAttributeValues: Record<string, unknown> = {};
@@ -81,7 +57,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const updateExpression = 'SET ' + updateExpressionParts.join(', ');
 
     const params = {
-      TableName: process.env.AGENTS_TABLE!,
+      TableName: config.agentsTable,
       Key: {
         id: validatedId,
       },
@@ -109,13 +85,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         body: JSON.stringify(updatedAgent),
       };
     } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        'name' in error &&
-        error.name === 'ConditionalCheckFailedException'
-      ) {
-        throw new NotFoundError('Agent not found');
-      }
+      handleConditionalCheckFailedException(error);
       throw error; // Re-throw other unexpected errors
     }
   } catch (error: unknown) {

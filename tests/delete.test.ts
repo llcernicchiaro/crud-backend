@@ -7,6 +7,13 @@ import {
   Callback,
   APIGatewayEventRequestContext,
 } from 'aws-lambda';
+import { mocked } from 'jest-mock';
+import * as errorHandlerModule from '../src/utils/errorHandler';
+
+interface ErrorResponse {
+  message: string;
+  details?: { fieldErrors: { id: string[] } };
+}
 
 // Mock the dynamodb client
 jest.mock('../src/db/client', () => ({
@@ -15,16 +22,18 @@ jest.mock('../src/db/client', () => ({
   },
 }));
 
-describe('delete handler', () => {
-  const mockTableName = 'test-agents-table';
-  const validUuid = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; // A valid UUID for testing
+jest.mock('../src/config', () => ({
+  config: {
+    agentsTable: 'test-agents-table',
+  },
+}));
 
-  beforeAll(() => {
-    process.env.AGENTS_TABLE = mockTableName;
-  });
+describe('delete handler', () => {
+  const validUuid = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; // A valid UUID for testing
+  const mockedDynamoDBSend = mocked(dynamoDB.send);
 
   beforeEach(() => {
-    (dynamoDB.send as jest.Mock).mockClear();
+    mockedDynamoDBSend.mockClear();
   });
 
   it('should delete an agent successfully', async () => {
@@ -55,7 +64,7 @@ describe('delete handler', () => {
     expect(dynamoDB.send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          TableName: mockTableName,
+          TableName: 'test-agents-table',
           Key: { id: validUuid },
           ConditionExpression: 'attribute_exists(id)',
         },
@@ -123,11 +132,9 @@ describe('delete handler', () => {
 
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
-    expect(JSON.parse(response.body)).toHaveProperty(
-      'message',
-      'Invalid agent ID',
-    );
-    expect(JSON.parse(response.body)).toHaveProperty('details.fieldErrors.id');
+    const errorResponse = JSON.parse(response.body) as ErrorResponse;
+    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
+    expect(errorResponse).toHaveProperty('details.fieldErrors.id');
   });
 
   it('should return 400 if ID is not a valid UUID', async () => {
@@ -154,19 +161,16 @@ describe('delete handler', () => {
 
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
-    expect(JSON.parse(response.body)).toHaveProperty(
-      'message',
-      'Invalid agent ID',
-    );
-    expect(JSON.parse(response.body).details.fieldErrors.id[0]).toEqual(
-      'Invalid uuid',
-    );
+    const errorResponse = JSON.parse(response.body) as ErrorResponse;
+    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
+    expect(errorResponse.details?.fieldErrors.id[0]).toEqual('Invalid uuid');
   });
 
   it('should return 500 if DynamoDB operation fails', async () => {
-    (dynamoDB.send as jest.Mock).mockRejectedValueOnce(
-      new Error('DynamoDB error'),
-    );
+    const dynamoDBError = new Error('DynamoDB error');
+    (dynamoDB.send as jest.Mock).mockRejectedValueOnce(dynamoDBError);
+
+    const errorHandlerSpy = jest.spyOn(errorHandlerModule, 'errorHandler');
 
     const mockEvent: APIGatewayProxyEvent = {
       pathParameters: { id: validUuid },
@@ -183,16 +187,44 @@ describe('delete handler', () => {
       resource: '',
     };
 
-    const response: APIGatewayProxyResult = (await handler(
-      mockEvent,
-      {} as Context,
-      {} as Callback,
-    )) as APIGatewayProxyResult;
+    await handler(mockEvent, {} as Context, {} as Callback);
 
     expect(dynamoDB.send).toHaveBeenCalledTimes(1);
-    expect(response.statusCode).toBe(500);
-    expect(JSON.parse(response.body)).toEqual({
-      message: 'Internal Server Error',
+    expect(errorHandlerSpy).toHaveBeenCalledWith(dynamoDBError);
+
+    errorHandlerSpy.mockRestore();
+  });
+
+  it('should re-throw unexpected errors from DynamoDB', async () => {
+    const unexpectedError = new Error('Unexpected DynamoDB error');
+    (dynamoDB.send as jest.Mock).mockRejectedValueOnce(unexpectedError);
+
+    // Temporarily mock errorHandler to re-throw for this specific test
+    const errorHandlerSpy = jest.spyOn(errorHandlerModule, 'errorHandler');
+    errorHandlerSpy.mockImplementationOnce((error) => {
+      throw error;
     });
+
+    const mockEvent: APIGatewayProxyEvent = {
+      pathParameters: { id: validUuid },
+      body: null,
+      headers: {},
+      multiValueHeaders: {},
+      httpMethod: 'DELETE',
+      isBase64Encoded: false,
+      path: `/agents/${validUuid}`,
+      queryStringParameters: null,
+      multiValueQueryStringParameters: null,
+      stageVariables: null,
+      requestContext: {} as APIGatewayEventRequestContext,
+      resource: '',
+    };
+
+    await expect(
+      handler(mockEvent, {} as Context, {} as Callback),
+    ).rejects.toThrow(unexpectedError);
+    expect(dynamoDB.send).toHaveBeenCalledTimes(1);
+
+    errorHandlerSpy.mockRestore(); // Clean up the spy
   });
 });

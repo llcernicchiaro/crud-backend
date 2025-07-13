@@ -8,6 +8,12 @@ import {
   Callback,
   APIGatewayEventRequestContext,
 } from 'aws-lambda';
+import { mocked } from 'jest-mock';
+
+interface ErrorResponse {
+  message: string;
+  details?: { fieldErrors: { name?: string[] } };
+}
 
 // Mock the dynamodb client and uuid
 jest.mock('../src/db/client', () => ({
@@ -17,20 +23,22 @@ jest.mock('../src/db/client', () => ({
 }));
 
 jest.mock('uuid', () => ({
-  v4: jest.fn(),
+  v4: jest.fn(() => 'mock-uuid'),
+}));
+
+jest.mock('../src/config', () => ({
+  config: {
+    agentsTable: 'test-agents-table',
+  },
 }));
 
 describe('create handler', () => {
   const mockUuid = 'test-uuid';
-  const mockTableName = 'test-agents-table';
-
-  beforeAll(() => {
-    process.env.AGENTS_TABLE = mockTableName;
-  });
+  const mockedDynamoDBSend = mocked(dynamoDB.send);
 
   beforeEach(() => {
-    (uuidv4 as jest.Mock).mockReturnValue(mockUuid);
-    (dynamoDB.send as jest.Mock).mockClear();
+    (uuidv4 as jest.Mock<string, []>).mockReturnValue(mockUuid);
+    mockedDynamoDBSend.mockClear();
   });
 
   it('should create an agent successfully with default status and temperature', async () => {
@@ -73,7 +81,7 @@ describe('create handler', () => {
     expect(dynamoDB.send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          TableName: mockTableName,
+          TableName: 'test-agents-table',
           Item: expectedAgent,
         },
       }),
@@ -125,7 +133,7 @@ describe('create handler', () => {
     expect(dynamoDB.send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          TableName: mockTableName,
+          TableName: 'test-agents-table',
           Item: expectedAgent,
         },
       }),
@@ -220,14 +228,10 @@ describe('create handler', () => {
 
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
-    expect(JSON.parse(response.body)).toHaveProperty(
-      'message',
-      'Validation Error',
-    );
-    expect(JSON.parse(response.body)).toHaveProperty('errors');
-    expect(JSON.parse(response.body).errors[0]).toHaveProperty('path', [
-      'name',
-    ]);
+    const errorResponse = JSON.parse(response.body) as ErrorResponse;
+    expect(errorResponse).toHaveProperty('message', 'Invalid request body');
+    expect(errorResponse).toHaveProperty('details.fieldErrors.name');
+    expect(errorResponse.details?.fieldErrors.name?.[0]).toEqual('Required');
   });
 
   it('should return 500 if DynamoDB operation fails', async () => {

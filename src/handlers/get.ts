@@ -1,12 +1,13 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
-import { z } from 'zod';
 
 import { dynamoDB } from '../db/client';
-import { agentSchema, Agent } from '../models/Agent';
+import { config } from '../config';
+import { Agent } from '../models/Agent';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 import { NotFoundError } from '../utils/errors';
+import { validateAgentId } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
@@ -15,19 +16,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       agentId: event.pathParameters?.id,
     });
 
-    const { id } = event.pathParameters || {};
-
-    let validatedId: string;
-    try {
-      const idParam = z.object({ id: agentSchema.shape.id }).parse({ id });
-      validatedId = idParam.id;
-    } catch (error) {
-      return errorHandler(error); // Pass ZodError to errorHandler
-    }
+    const validatedId = validateAgentId(event);
 
     const { Item } = await dynamoDB.send(
       new GetCommand({
-        TableName: process.env.AGENTS_TABLE!,
+        TableName: config.agentsTable,
         Key: {
           id: validatedId,
         },

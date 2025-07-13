@@ -2,6 +2,7 @@ import { APIGatewayProxyHandler } from 'aws-lambda';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 import { dynamoDB } from '../db/client';
+import { config } from '../config';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 
@@ -11,7 +12,7 @@ export const handler: APIGatewayProxyHandler = async () => {
 
     const { Items } = await dynamoDB.send(
       new ScanCommand({
-        TableName: process.env.AGENTS_TABLE!,
+        TableName: config.agentsTable,
       }),
     );
 
@@ -22,7 +23,7 @@ export const handler: APIGatewayProxyHandler = async () => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify(Items || []),
+      body: JSON.stringify(Items ?? []),
     };
   } catch (error) {
     return errorHandler(error);
