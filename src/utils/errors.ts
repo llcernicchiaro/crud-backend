@@ -27,3 +27,14 @@ export class InternalServerError extends HttpError {
     super(500, message);
   }
 }
+
+export function handleConditionalCheckFailedException(error: unknown): void {
+  if (
+    error instanceof Error &&
+    'name' in error &&
+    error.name === 'ConditionalCheckFailedException'
+  ) {
+    throw new NotFoundError('Agent not found');
+  }
+  throw error; // Re-throw other unexpected errors
+}

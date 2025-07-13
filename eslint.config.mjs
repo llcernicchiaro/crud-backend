@@ -2,21 +2,37 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
-import { defineConfig } from 'eslint/config';
+import { globalIgnores } from 'eslint/config';
 
-export default defineConfig([
+export default tseslint.config(
+  globalIgnores(['.build']),
   {
-    files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-    plugins: { js },
-    extends: ['js/recommended'],
+    files: ['**/*.ts'],
+    extends: [
+      prettier,
+      ...tseslint.configs.strictTypeChecked,
+      ...tseslint.configs.stylisticTypeChecked,
+    ],
+    languageOptions: {
+      globals: globals.node,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
   {
-    files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-    languageOptions: { globals: globals.node },
+    files: ['**/*.{js,mjs,cjs}'],
+    extends: [prettier, js.configs.recommended],
+    languageOptions: {
+      globals: globals.node,
+    },
   },
-  tseslint.configs.recommended,
   {
-    files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-    extends: [prettier],
+    files: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
   },
-]);
+);

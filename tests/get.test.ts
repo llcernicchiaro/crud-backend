@@ -7,6 +7,12 @@ import {
   Callback,
   APIGatewayEventRequestContext,
 } from 'aws-lambda';
+import { mocked } from 'jest-mock';
+
+interface ErrorResponse {
+  message: string;
+  details?: { fieldErrors: { id?: string[] } };
+}
 
 // Mock the dynamodb client
 jest.mock('../src/db/client', () => ({
@@ -15,20 +21,19 @@ jest.mock('../src/db/client', () => ({
   },
 }));
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(),
+jest.mock('../src/config', () => ({
+  config: {
+    agentsTable: 'test-agents-table',
+  },
 }));
 
 describe('get handler', () => {
-  const mockTableName = 'test-agents-table';
   const validUuid = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; // A valid UUID for testing
-
-  beforeAll(() => {
-    process.env.AGENTS_TABLE = mockTableName;
-  });
+  const mockedDynamoDBSend = mocked(dynamoDB.send);
 
   beforeEach(() => {
-    (dynamoDB.send as jest.Mock).mockClear();
+    mockedDynamoDBSend.mockClear();
+    jest.spyOn(dynamoDB, 'send');
     // No need to mock uuidv4 here as it's not directly used in the handler logic for get
   });
 
@@ -70,7 +75,7 @@ describe('get handler', () => {
     expect(dynamoDB.send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          TableName: mockTableName,
+          TableName: 'test-agents-table',
           Key: { id: validUuid },
         },
       }),
@@ -108,7 +113,7 @@ describe('get handler', () => {
     expect(dynamoDB.send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          TableName: mockTableName,
+          TableName: 'test-agents-table',
           Key: { id: validUuid },
         },
       }),
@@ -141,12 +146,10 @@ describe('get handler', () => {
 
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
-    expect(JSON.parse(response.body)).toHaveProperty(
-      'message',
-      'Validation Error',
-    );
-    expect(JSON.parse(response.body)).toHaveProperty('errors');
-    expect(JSON.parse(response.body).errors[0]).toHaveProperty('path', ['id']);
+    const errorResponse = JSON.parse(response.body) as ErrorResponse;
+    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
+    expect(errorResponse).toHaveProperty('details.fieldErrors.id');
+    expect(errorResponse.details?.fieldErrors.id?.[0]).toEqual('Required');
   });
 
   it('should return 400 if ID is not a valid UUID', async () => {
@@ -173,11 +176,9 @@ describe('get handler', () => {
 
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
-    expect(JSON.parse(response.body)).toHaveProperty(
-      'message',
-      'Validation Error',
-    );
-    expect(JSON.parse(response.body).errors[0]).toHaveProperty('path', ['id']);
+    const errorResponse = JSON.parse(response.body) as ErrorResponse;
+    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
+    expect(errorResponse.details?.fieldErrors.id?.[0]).toEqual('Invalid uuid');
   });
 
   it('should return 500 if DynamoDB operation fails', async () => {

@@ -92,7 +92,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000/dev",
+      "value": "http://localhost:3001",
       "type": "string"
     },
     {

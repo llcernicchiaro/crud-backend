@@ -3,30 +3,17 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 
 import { dynamoDB } from '../db/client';
+import { config } from '../config';
 import { Agent, createAgentInputSchema } from '../models/Agent';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
-import { BadRequestError } from '../utils/errors';
+import { validateBody } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     logger.info({ message: 'Creating new agent' });
 
-    if (!event.body) throw new BadRequestError('Missing request body');
-
-    let parsedBody;
-    try {
-      parsedBody = JSON.parse(event.body);
-    } catch {
-      throw new BadRequestError('Invalid JSON in request body');
-    }
-
-    let validatedData;
-    try {
-      validatedData = createAgentInputSchema.parse(parsedBody);
-    } catch (error) {
-      return errorHandler(error); // Pass ZodError to errorHandler
-    }
+    const validatedData = validateBody(event, createAgentInputSchema);
 
     const agent: Agent = {
       id: uuidv4(),
@@ -40,7 +27,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     await dynamoDB.send(
       new PutCommand({
-        TableName: process.env.AGENTS_TABLE!,
+        TableName: config.agentsTable,
         Item: agent,
       }),
     );
