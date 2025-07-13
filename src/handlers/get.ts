@@ -3,6 +3,7 @@ import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
 
 import { dynamoDB } from '../db/client';
+import { config } from '../config';
 import { agentSchema, Agent } from '../models/Agent';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
@@ -15,7 +16,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       agentId: event.pathParameters?.id,
     });
 
-    const { id } = event.pathParameters || {};
+    const { id } = event.pathParameters ?? {};
 
     let validatedId: string;
     try {
@@ -27,7 +28,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     const { Item } = await dynamoDB.send(
       new GetCommand({
-        TableName: process.env.AGENTS_TABLE!,
+        TableName: config.agentsTable,
         Key: {
           id: validatedId,
         },

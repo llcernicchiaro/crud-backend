@@ -3,6 +3,7 @@ import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
 
 import { dynamoDB } from '../db/client';
+import { config } from '../config';
 import { agentSchema } from '../models/Agent';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
@@ -12,7 +13,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     logger.info({ message: 'Deleting agent' });
 
-    const { id } = event.pathParameters || {};
+    const { id } = event.pathParameters ?? {};
 
     const idParam = z.object({ id: agentSchema.shape.id });
     const validationResult = idParam.safeParse({ id });
@@ -34,7 +35,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     try {
       await dynamoDB.send(
         new DeleteCommand({
-          TableName: process.env.AGENTS_TABLE!,
+          TableName: config.agentsTable,
           Key: {
             id: validatedId,
           },

@@ -7,6 +7,11 @@ import {
   Callback,
   APIGatewayEventRequestContext,
 } from 'aws-lambda';
+import { mocked } from 'jest-mock';
+
+interface ErrorResponse {
+  message: string;
+}
 
 // Mock the dynamodb client
 jest.mock('../src/db/client', () => ({
@@ -15,18 +20,21 @@ jest.mock('../src/db/client', () => ({
   },
 }));
 
-describe('list handler', () => {
-  const mockTableName = 'test-agents-table';
+jest.mock('../src/config', () => ({
+  config: {
+    agentsTable: 'test-agents-table',
+  },
+}));
 
-  beforeAll(() => {
-    process.env.AGENTS_TABLE = mockTableName;
-  });
+describe('list handler', () => {
+  const mockedDynamoDBSend = mocked(dynamoDB.send);
 
   beforeEach(() => {
-    (dynamoDB.send as jest.Mock).mockClear();
+    mockedDynamoDBSend.mockClear();
+    jest.spyOn(dynamoDB, 'send');
   });
 
-  it('should return an empty list of agents successfully', async () => {
+  it('should return an empty list of agents when Items is an empty array', async () => {
     (dynamoDB.send as jest.Mock).mockResolvedValueOnce({ Items: [] });
 
     const mockEvent: APIGatewayProxyEvent = {
@@ -54,7 +62,44 @@ describe('list handler', () => {
     expect(dynamoDB.send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          TableName: mockTableName,
+          TableName: 'test-agents-table',
+        },
+      }),
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual([]);
+  });
+
+  it('should return an empty list of agents when Items is undefined', async () => {
+    (dynamoDB.send as jest.Mock).mockResolvedValueOnce({}); // Items is undefined
+
+    const mockEvent: APIGatewayProxyEvent = {
+      body: null,
+      pathParameters: null,
+      headers: {},
+      multiValueHeaders: {},
+      httpMethod: 'GET',
+      isBase64Encoded: false,
+      path: '/agents',
+      queryStringParameters: null,
+      multiValueQueryStringParameters: null,
+      stageVariables: null,
+      requestContext: {} as APIGatewayEventRequestContext,
+      resource: '',
+    };
+
+    const response: APIGatewayProxyResult = (await handler(
+      mockEvent,
+      {} as Context,
+      {} as Callback,
+    )) as APIGatewayProxyResult;
+
+    expect(dynamoDB.send).toHaveBeenCalledTimes(1);
+    expect(dynamoDB.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          TableName: 'test-agents-table',
         },
       }),
     );
@@ -112,7 +157,7 @@ describe('list handler', () => {
     expect(dynamoDB.send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          TableName: mockTableName,
+          TableName: 'test-agents-table',
         },
       }),
     );
@@ -149,7 +194,8 @@ describe('list handler', () => {
 
     expect(dynamoDB.send).toHaveBeenCalledTimes(1);
     expect(response.statusCode).toBe(500);
-    expect(JSON.parse(response.body)).toEqual({
+    const errorResponse = JSON.parse(response.body) as ErrorResponse;
+    expect(errorResponse).toEqual({
       message: 'Internal Server Error',
     });
   });

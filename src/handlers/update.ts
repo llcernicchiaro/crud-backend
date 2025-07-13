@@ -3,6 +3,7 @@ import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
 import { ReturnValue } from '@aws-sdk/client-dynamodb';
 
+import { config } from '../config';
 import { dynamoDB } from '../db/client';
 import {
   agentSchema,
@@ -18,7 +19,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     logger.info({ message: 'Updating agent' });
 
-    const { id } = event.pathParameters || {};
+    const { id } = event.pathParameters ?? {};
 
     const idParam = z.object({ id: agentSchema.shape.id });
     const idValidationResult = idParam.safeParse({ id });
@@ -36,7 +37,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (!event.body) throw new BadRequestError('Missing request body');
 
-    let parsedBody;
+    let parsedBody: unknown;
     try {
       parsedBody = JSON.parse(event.body);
     } catch {
@@ -81,7 +82,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const updateExpression = 'SET ' + updateExpressionParts.join(', ');
 
     const params = {
-      TableName: process.env.AGENTS_TABLE!,
+      TableName: config.agentsTable,
       Key: {
         id: validatedId,
       },

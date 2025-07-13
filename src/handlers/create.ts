@@ -3,6 +3,7 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 
 import { dynamoDB } from '../db/client';
+import { config } from '../config';
 import { Agent, createAgentInputSchema } from '../models/Agent';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
@@ -14,7 +15,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (!event.body) throw new BadRequestError('Missing request body');
 
-    let parsedBody;
+    let parsedBody: unknown;
     try {
       parsedBody = JSON.parse(event.body);
     } catch {
@@ -40,7 +41,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     await dynamoDB.send(
       new PutCommand({
-        TableName: process.env.AGENTS_TABLE!,
+        TableName: config.agentsTable,
         Item: agent,
       }),
     );
