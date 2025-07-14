@@ -1,15 +1,115 @@
 {
   "info": {
     "_postman_id": "a8b8c8d8-e8f8-g8h8-i8j8-k8l8m8n8o8p8",
-    "name": "CRUD Backend API",
+    "name": "CRUD Backend API (with Cognito Auth)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
+      "name": "Cognito - Sign Up",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-amz-json-1.1"
+          },
+          {
+            "key": "X-Amz-Target",
+            "value": "AWSCognitoIdentityProviderService.SignUp"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"ClientId\": \"{{clientId}}\",\n    \"Username\": \"testuser@example.com\",\n    \"Password\": \"YourStrongPassword1!\",\n    \"UserAttributes\": [\n        {\n            \"Name\": \"email\",\n            \"Value\": \"testuser@example.com\"\n        }\n    ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://cognito-idp.{{awsRegion}}.amazonaws.com/",
+          "protocol": "https",
+          "host": [
+            "cognito-idp",
+            "{{awsRegion}}",
+            "amazonaws",
+            "com"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cognito - Sign In",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.AuthenticationResult && jsonData.AuthenticationResult.IdToken) {",
+              "    pm.environment.set(\"idToken\", jsonData.AuthenticationResult.IdToken);",
+              "    console.log(\"ID Token set:\", jsonData.AuthenticationResult.IdToken);",
+              "} else {",
+              "    console.log(\"ID Token not found in response.\");",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-amz-json-1.1"
+          },
+          {
+            "key": "X-Amz-Target",
+            "value": "AWSCognitoIdentityProviderService.InitiateAuth"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"AuthFlow\": \"USER_PASSWORD_AUTH\",\n    \"ClientId\": \"{{clientId}}\",\n    \"AuthParameters\": {\n        \"USERNAME\": \"testuser@example.com\",\n        \"PASSWORD\": \"YourStrongPassword1!\"\n    }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://cognito-idp.{{awsRegion}}.amazonaws.com/",
+          "protocol": "https",
+          "host": [
+            "cognito-idp",
+            "{{awsRegion}}",
+            "amazonaws",
+            "com"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Create Agent",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"name\": \"My Awesome Agent\",\n  \"description\": \"This is a test agent.\",\n  \"model\": \"gpt-4\",\n  \"status\": \"active\",\n  \"temperature\": 0.8\n}",
@@ -20,9 +120,13 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["agents"]
+          "raw": "{{apiBaseUrl}}/agents",
+          "host": [
+            "{{apiBaseUrl}}"
+          ],
+          "path": [
+            "agents"
+          ]
         }
       },
       "response": []
@@ -31,11 +135,21 @@
       "name": "Get Agent",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          }
+        ],
         "url": {
-          "raw": "{{baseUrl}}/agents/{{agentId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["agents", "{{agentId}}"]
+          "raw": "{{apiBaseUrl}}/agents/{{agentId}}",
+          "host": [
+            "{{apiBaseUrl}}"
+          ],
+          "path": [
+            "agents",
+            "{{agentId}}"
+          ]
         }
       },
       "response": []
@@ -44,11 +158,20 @@
       "name": "List Agents",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          }
+        ],
         "url": {
-          "raw": "{{baseUrl}}/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["agents"]
+          "raw": "{{apiBaseUrl}}/agents",
+          "host": [
+            "{{apiBaseUrl}}"
+          ],
+          "path": [
+            "agents"
+          ]
         }
       },
       "response": []
@@ -57,7 +180,12 @@
       "name": "Update Agent",
       "request": {
         "method": "PUT",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"name\": \"My Updated Awesome Agent\",\n  \"description\": \"This is an updated test agent.\",\n  \"model\": \"claude\",\n  \"status\": \"inactive\",\n  \"temperature\": 0.5\n}",
@@ -68,9 +196,14 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/agents/{{agentId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["agents", "{{agentId}}"]
+          "raw": "{{apiBaseUrl}}/agents/{{agentId}}",
+          "host": [
+            "{{apiBaseUrl}}"
+          ],
+          "path": [
+            "agents",
+            "{{agentId}}"
+          ]
         }
       },
       "response": []
@@ -79,11 +212,21 @@
       "name": "Delete Agent",
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          }
+        ],
         "url": {
-          "raw": "{{baseUrl}}/agents/{{agentId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["agents", "{{agentId}}"]
+          "raw": "{{apiBaseUrl}}/agents/{{agentId}}",
+          "host": [
+            "{{apiBaseUrl}}"
+          ],
+          "path": [
+            "agents",
+            "{{agentId}}"
+          ]
         }
       },
       "response": []
@@ -91,12 +234,32 @@
   ],
   "variable": [
     {
-      "key": "baseUrl",
-      "value": "http://localhost:3001",
+      "key": "apiBaseUrl",
+      "value": "{{YOUR_API_GATEWAY_BASE_URL}}",
       "type": "string"
     },
     {
       "key": "agentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "awsRegion",
+      "value": "{{YOUR_AWS_REGION}}",
+      "type": "string"
+    },
+    {
+      "key": "userPoolId",
+      "value": "{{YOUR_COGNITO_USER_POOL_ID}}",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "{{YOUR_COGNITO_CLIENT_ID}}",
+      "type": "string"
+    },
+    {
+      "key": "idToken",
       "value": "",
       "type": "string"
     }
