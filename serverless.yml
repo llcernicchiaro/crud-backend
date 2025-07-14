@@ -10,9 +10,12 @@ provider:
     cors: true
     authorizers:
       cognitoAuthorizer:
-        type: cognito_user_pools
-        userPools:
-          - Ref: CognitoUserPool
+        type: jwt
+        name: cognitoAuthorizer
+        identitySource: $request.header.Authorization
+        issuerUrl: !Sub 'https://cognito-idp.${aws:region}.amazonaws.com/${CognitoUserPool}'
+        audience:
+          - !GetAtt CognitoUserPoolClient.ClientId
   environment:
     STAGE: ${self:provider.stage}
     AGENTS_TABLE: ${self:custom.agentsTable}
@@ -28,6 +31,9 @@ provider:
             - dynamodb:Scan
             - dynamodb:Query
           Resource: 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.agentsTable}'
+
+package:
+  individually: true
 
 custom:
   agentsTable: 'agents-${sls:stage}'
@@ -83,9 +89,7 @@ resources:
           - ADMIN_NO_SRP_AUTH
           - USER_PASSWORD_AUTH
         GenerateSecret: false
-        AccessTokenValidity: 60 # minutes
-        IdTokenValidity: 60 # minutes
-        RefreshTokenValidity: 1 # days
+        
         ReadAttributes:
           - email
         WriteAttributes:
