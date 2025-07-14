@@ -45,6 +45,49 @@ resources:
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
 
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-${sls:stage}-user-pool
+        Schema:
+          - Name: email
+            Required: true
+            Mutable: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: true
+            RequireUppercase: true
+        AutoVerifiedAttributes:
+          - email
+        MfaConfiguration: OFF
+        AccountRecoverySetting:
+          RecoveryMechanisms:
+            - Name: verified_email
+              Priority: 1
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:service}-${sls:stage}-client
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ADMIN_NO_SRP_AUTH
+          - USER_PASSWORD_AUTH
+        GenerateSecret: false
+        AccessTokenValidity: 60 # minutes
+        IdTokenValidity: 60 # minutes
+        RefreshTokenValidity: 1 # days
+        ReadAttributes:
+          - email
+        WriteAttributes:
+          - email
+        SupportedIdentityProviders:
+          - COGNITO
+
 functions:
   createAgent:
     handler: src/handlers/create.handler
@@ -52,6 +95,7 @@ functions:
       - httpApi:
           path: /agents
           method: post
+          authorizer: cognitoAuthorizer
 
   getAgent:
     handler: src/handlers/get.handler
@@ -59,6 +103,7 @@ functions:
       - httpApi:
           path: /agents/{id}
           method: get
+          authorizer: cognitoAuthorizer
 
   listAgents:
     handler: src/handlers/list.handler
@@ -66,6 +111,7 @@ functions:
       - httpApi:
           path: /agents
           method: get
+          authorizer: cognitoAuthorizer
 
   updateAgent:
     handler: src/handlers/update.handler
@@ -73,6 +119,7 @@ functions:
       - httpApi:
           path: /agents/{id}
           method: put
+          authorizer: cognitoAuthorizer
 
   deleteAgent:
     handler: src/handlers/delete.handler
@@ -80,3 +127,4 @@ functions:
       - httpApi:
           path: /agents/{id}
           method: delete
+          authorizer: cognitoAuthorizer
