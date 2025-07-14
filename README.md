@@ -86,4 +86,12 @@ Our CI/CD pipeline ensures code quality and automated deployments:
 
 ### CI/CD Setup Screenshots
 
-_(Screenshots of the GitHub Actions CI/CD setup and AWS deployments will be included here upon completion.)_
+Here are screenshots illustrating the GitHub Actions CI/CD pipelines:
+
+#### CI Action
+
+![GitHub Actions CI Workflow](images/ci.png)
+
+#### Deploy (to PROD) Action
+
+![GitHub Actions Deploy Workflow](images/deploy.png)
