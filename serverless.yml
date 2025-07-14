@@ -31,6 +31,25 @@ provider:
             - dynamodb:Scan
             - dynamodb:Query
           Resource: 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.agentsTable}'
+        - Effect: Allow
+          Action:
+            - cognito-idp:CreateUserPool
+            - cognito-idp:ListUserPools
+            - cognito-idp:ListUserPoolClients
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - cognito-idp:DescribeUserPool
+            - cognito-idp:UpdateUserPool
+            - cognito-idp:DeleteUserPool
+            - cognito-idp:CreateUserPoolClient
+            - cognito-idp:DescribeUserPoolClient
+            - cognito-idp:UpdateUserPoolClient
+            - cognito-idp:DeleteUserPoolClient
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminRespondToAuthChallenge
+          Resource:
+            - !GetAtt CognitoUserPool.Arn
 
 package:
   individually: true
