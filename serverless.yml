@@ -8,6 +8,11 @@ provider:
   stage: ${opt:stage, 'dev'}
   httpApi:
     cors: true
+    authorizers:
+      cognitoAuthorizer:
+        type: cognito_user_pools
+        userPools:
+          - Ref: CognitoUserPool
   environment:
     STAGE: ${self:provider.stage}
     AGENTS_TABLE: ${self:custom.agentsTable}
