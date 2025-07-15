@@ -5,12 +5,12 @@ import { HttpError, InternalServerError } from './errors';
 
 export const errorHandler = (error: unknown): APIGatewayProxyResult => {
   if (error instanceof z.ZodError) {
-    logger.error('Validation Error', { error, validationErrors: error.errors });
+    logger.error('Validation Error', { error, validationErrors: error.issues });
     return {
       statusCode: 400,
       body: JSON.stringify({
         message: 'Validation Error',
-        errors: error.errors,
+        errors: error.issues,
       }),
     };
   }

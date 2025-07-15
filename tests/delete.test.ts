@@ -12,7 +12,13 @@ import * as errorHandlerModule from '../src/utils/errorHandler';
 
 interface ErrorResponse {
   message: string;
-  details?: { fieldErrors: { id: string[] } };
+  details?: {
+    code: string;
+    expected?: string;
+    received?: string;
+    path: string[];
+    message: string;
+  }[];
 }
 
 // Mock the dynamodb client
@@ -133,8 +139,14 @@ describe('delete handler', () => {
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
     const errorResponse = JSON.parse(response.body) as ErrorResponse;
-    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
-    expect(errorResponse).toHaveProperty('details.fieldErrors.id');
+    expect(errorResponse.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: ['id'],
+          message: 'Invalid input: expected string, received undefined',
+        }),
+      ]),
+    );
   });
 
   it('should return 400 if ID is not a valid UUID', async () => {
@@ -163,7 +175,14 @@ describe('delete handler', () => {
     expect(response.statusCode).toBe(400);
     const errorResponse = JSON.parse(response.body) as ErrorResponse;
     expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
-    expect(errorResponse.details?.fieldErrors.id[0]).toEqual('Invalid uuid');
+    expect(errorResponse.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: ['id'],
+          message: 'Invalid UUID',
+        }),
+      ]),
+    );
   });
 
   it('should return 500 if DynamoDB operation fails', async () => {
