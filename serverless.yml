@@ -8,6 +8,14 @@ provider:
   stage: ${opt:stage, 'dev'}
   httpApi:
     cors: true
+    authorizers:
+      cognitoAuthorizer:
+        type: jwt
+        name: cognitoAuthorizer
+        identitySource: $request.header.Authorization
+        issuerUrl: !Sub 'https://cognito-idp.${aws:region}.amazonaws.com/${CognitoUserPool}'
+        audience:
+          - !GetAtt CognitoUserPoolClient.ClientId
   environment:
     STAGE: ${self:provider.stage}
     AGENTS_TABLE: ${self:custom.agentsTable}
@@ -23,6 +31,28 @@ provider:
             - dynamodb:Scan
             - dynamodb:Query
           Resource: 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.agentsTable}'
+        - Effect: Allow
+          Action:
+            - cognito-idp:CreateUserPool
+            - cognito-idp:ListUserPools
+            - cognito-idp:ListUserPoolClients
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - cognito-idp:DescribeUserPool
+            - cognito-idp:UpdateUserPool
+            - cognito-idp:DeleteUserPool
+            - cognito-idp:CreateUserPoolClient
+            - cognito-idp:DescribeUserPoolClient
+            - cognito-idp:UpdateUserPoolClient
+            - cognito-idp:DeleteUserPoolClient
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminRespondToAuthChallenge
+          Resource:
+            - !GetAtt CognitoUserPool.Arn
+
+package:
+  individually: true
 
 custom:
   agentsTable: 'agents-${sls:stage}'
@@ -45,6 +75,47 @@ resources:
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
 
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-${sls:stage}-user-pool
+        Schema:
+          - Name: email
+            Required: true
+            Mutable: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: true
+            RequireUppercase: true
+        AutoVerifiedAttributes:
+          - email
+        MfaConfiguration: OFF
+        AccountRecoverySetting:
+          RecoveryMechanisms:
+            - Name: verified_email
+              Priority: 1
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:service}-${sls:stage}-client
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ADMIN_NO_SRP_AUTH
+          - USER_PASSWORD_AUTH
+        GenerateSecret: false
+        
+        ReadAttributes:
+          - email
+        WriteAttributes:
+          - email
+        SupportedIdentityProviders:
+          - COGNITO
+
 functions:
   createAgent:
     handler: src/handlers/create.handler
@@ -52,6 +123,7 @@ functions:
       - httpApi:
           path: /agents
           method: post
+          authorizer: cognitoAuthorizer
 
   getAgent:
     handler: src/handlers/get.handler
@@ -59,6 +131,7 @@ functions:
       - httpApi:
           path: /agents/{id}
           method: get
+          authorizer: cognitoAuthorizer
 
   listAgents:
     handler: src/handlers/list.handler
@@ -66,6 +139,7 @@ functions:
       - httpApi:
           path: /agents
           method: get
+          authorizer: cognitoAuthorizer
 
   updateAgent:
     handler: src/handlers/update.handler
@@ -73,6 +147,7 @@ functions:
       - httpApi:
           path: /agents/{id}
           method: put
+          authorizer: cognitoAuthorizer
 
   deleteAgent:
     handler: src/handlers/delete.handler
@@ -80,3 +155,4 @@ functions:
       - httpApi:
           path: /agents/{id}
           method: delete
+          authorizer: cognitoAuthorizer
