@@ -12,7 +12,13 @@ import * as errorHandlerModule from '../src/utils/errorHandler';
 
 interface ErrorResponse {
   message: string;
-  details?: { fieldErrors: { id?: string[]; name?: string[] } };
+  details?: {
+    code: string;
+    expected?: string;
+    received?: string;
+    path: string[];
+    message: string;
+  }[];
 }
 
 // Mock the dynamodb client
@@ -169,9 +175,14 @@ describe('update handler', () => {
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
     const errorResponse = JSON.parse(response.body) as ErrorResponse;
-    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
-    expect(errorResponse).toHaveProperty('details');
-    expect(errorResponse.details?.fieldErrors.id?.[0]).toEqual('Required');
+    expect(errorResponse.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: ['id'],
+          message: 'Invalid input: expected string, received undefined',
+        }),
+      ]),
+    );
   });
 
   it('should return 400 if ID is not a valid UUID', async () => {
@@ -199,9 +210,14 @@ describe('update handler', () => {
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
     const errorResponse = JSON.parse(response.body) as ErrorResponse;
-    expect(errorResponse).toHaveProperty('message', 'Invalid agent ID');
-    expect(errorResponse).toHaveProperty('details');
-    expect(errorResponse.details?.fieldErrors.id?.[0]).toEqual('Invalid uuid');
+    expect(errorResponse.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: ['id'],
+          message: 'Invalid UUID',
+        }),
+      ]),
+    );
   });
 
   it('should return 400 if request body is missing', async () => {
@@ -316,10 +332,13 @@ describe('update handler', () => {
     expect(dynamoDB.send).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
     const errorResponse = JSON.parse(response.body) as ErrorResponse;
-    expect(errorResponse).toHaveProperty('message', 'Invalid request body');
-    expect(errorResponse).toHaveProperty('details');
-    expect(errorResponse.details?.fieldErrors.name?.[0]).toEqual(
-      'Expected string, received number',
+    expect(errorResponse.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: ['name'],
+          message: 'Invalid input: expected string, received number',
+        }),
+      ]),
     );
   });
 

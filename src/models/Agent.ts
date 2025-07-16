@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 export const agentSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string().min(1),
   description: z.string().optional(),
   model: z.enum(['gpt-4', 'claude', 'mistral', 'custom']),
   status: z.enum(['active', 'inactive']).default('active').optional(),
   temperature: z.number().min(0).max(1).default(0.7).optional(),
-  createdAt: z.string().datetime().optional(),
-  updatedAt: z.string().datetime().optional(),
+  createdAt: z.iso.datetime().optional(),
+  updatedAt: z.iso.datetime().optional(),
 });
 
 export const createAgentInputSchema = z.object({
@@ -19,11 +19,13 @@ export const createAgentInputSchema = z.object({
   temperature: z.number().min(0).max(1).default(0.7).optional(),
 });
 
-export const updateAgentInputSchema = agentSchema
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
+export const updateAgentInputSchema = z
+  .object({
+    name: z.string().min(1),
+    description: z.string(),
+    model: z.enum(['gpt-4', 'claude', 'mistral', 'custom']),
+    status: z.enum(['active', 'inactive']),
+    temperature: z.number().min(0).max(1),
   })
   .partial();
 

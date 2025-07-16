@@ -12,7 +12,7 @@ export function validateAgentId(event: APIGatewayProxyEvent): string {
   if (!validationResult.success) {
     throw new BadRequestError(
       'Invalid agent ID',
-      validationResult.error.flatten(),
+      validationResult.error.issues,
     );
   }
 
@@ -21,7 +21,7 @@ export function validateAgentId(event: APIGatewayProxyEvent): string {
 
 export function validateBody<T>(
   event: APIGatewayProxyEvent,
-  schema: z.ZodSchema<T>,
+  schema: z.ZodType<T>,
 ): T {
   if (!event.body) {
     throw new BadRequestError('Missing request body');
@@ -39,7 +39,7 @@ export function validateBody<T>(
   if (!validationResult.success) {
     throw new BadRequestError(
       'Invalid request body',
-      validationResult.error.flatten(),
+      validationResult.error.issues,
     );
   }
 
