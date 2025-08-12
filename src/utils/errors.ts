@@ -38,3 +38,14 @@ export function handleConditionalCheckFailedException(error: unknown): void {
   }
   throw error; // Re-throw other unexpected errors
 }
+
+export function handleMcpNotFound(error: unknown): void {
+  if (
+    error instanceof Error &&
+    'name' in error &&
+    error.name === 'ConditionalCheckFailedException'
+  ) {
+    throw new NotFoundError('Mcp not found');
+  }
+  throw error; // Re-throw other unexpected errors
+}
