@@ -8,16 +8,16 @@ import { errorHandler } from '../utils/errorHandler';
 
 export const handler: APIGatewayProxyHandler = async () => {
   try {
-    logger.info({ message: 'Listing agents' });
+    logger.info({ message: 'Listing mcps' });
 
     const { Items } = await dynamoDB.send(
       new ScanCommand({
-        TableName: config.agentsTable,
+        TableName: config.mcpsTable,
       }),
     );
 
     logger.info({
-      message: 'Agents listed successfully',
+      message: 'Mcps listed successfully',
       count: Items ? Items.length : 0,
     });
 
