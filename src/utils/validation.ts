@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { z } from 'zod';
 import { agentSchema } from '../models/Agent';
+import { mcpSchema } from '../models/MCP';
 import { BadRequestError } from './errors';
 
 export function validateAgentId(event: APIGatewayProxyEvent): string {
@@ -12,6 +13,22 @@ export function validateAgentId(event: APIGatewayProxyEvent): string {
   if (!validationResult.success) {
     throw new BadRequestError(
       'Invalid agent ID',
+      validationResult.error.issues,
+    );
+  }
+
+  return validationResult.data.id;
+}
+
+export function validateMcpId(event: APIGatewayProxyEvent): string {
+  const { id } = event.pathParameters ?? {};
+
+  const idParam = z.object({ id: mcpSchema.shape.id });
+  const validationResult = idParam.safeParse({ id });
+
+  if (!validationResult.success) {
+    throw new BadRequestError(
+      'Invalid mcp ID',
       validationResult.error.issues,
     );
   }
