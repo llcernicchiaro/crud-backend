@@ -3,24 +3,24 @@ import { GetCommand } from '@aws-sdk/lib-dynamodb';
 
 import { dynamoDB } from '../db/client';
 import { config } from '../config';
-import { Agent } from '../models/Agent';
+import { Mcp } from '../models/MCP';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 import { NotFoundError } from '../utils/errors';
-import { validateAgentId } from '../utils/validation';
+import { validateMcpId } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     logger.info({
-      message: 'Fetching agent',
-      agentId: event.pathParameters?.id,
+      message: 'Fetching mcp',
+      mcpId: event.pathParameters?.id,
     });
 
-    const validatedId = validateAgentId(event);
+    const validatedId = validateMcpId(event);
 
     const { Item } = await dynamoDB.send(
       new GetCommand({
-        TableName: config.agentsTable,
+        TableName: config.mcpsTable,
         Key: {
           id: validatedId,
         },
@@ -28,14 +28,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     );
 
     if (!Item) {
-      throw new NotFoundError('Agent not found');
+      throw new NotFoundError('Mcp not found');
     }
 
-    const agent: Agent = Item as Agent;
+    const mcp: Mcp = Item as Mcp;
 
     logger.info({
-      message: 'Agent fetched successfully',
-      agentId: agent.id,
+      message: 'Mcp fetched successfully',
+      mcpId: mcp.id,
     });
 
     return {
