@@ -19,6 +19,7 @@ provider:
   environment:
     STAGE: ${self:provider.stage}
     AGENTS_TABLE: ${self:custom.agentsTable}
+    MCPS_TABLE: ${self:custom.mcpsTable}
   iam:
     role:
       statements:
@@ -31,6 +32,15 @@ provider:
             - dynamodb:Scan
             - dynamodb:Query
           Resource: 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.agentsTable}'
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+            - dynamodb:Query
+          Resource: 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.mcpsTable}'
         - Effect: Allow
           Action:
             - cognito-idp:CreateUserPool
@@ -56,6 +66,7 @@ package:
 
 custom:
   agentsTable: 'agents-${sls:stage}'
+  mcpsTable: 'mcps-${sls:stage}'
 
 plugins:
   - serverless-plugin-typescript
@@ -74,6 +85,18 @@ resources:
           - AttributeName: id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+    McpsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.mcpsTable}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
 
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
@@ -154,5 +177,45 @@ functions:
     events:
       - httpApi:
           path: /agents/{id}
+          method: delete
+          authorizer: cognitoAuthorizer
+
+  createMcp:
+    handler: src/handlers/mcp/create.handler
+    events:
+      - httpApi:
+          path: /mcps
+          method: post
+          authorizer: cognitoAuthorizer
+
+  getMcp:
+    handler: src/handlers/mcp/get.handler
+    events:
+      - httpApi:
+          path: /mcps/{id}
+          method: get
+          authorizer: cognitoAuthorizer
+
+  listMcps:
+    handler: src/handlers/mcp/list.handler
+    events:
+      - httpApi:
+          path: /mcps
+          method: get
+          authorizer: cognitoAuthorizer
+
+  updateMcp:
+    handler: src/handlers/mcp/update.handler
+    events:
+      - httpApi:
+          path: /mcps/{id}
+          method: put
+          authorizer: cognitoAuthorizer
+
+  deleteMcp:
+    handler: src/handlers/mcp/delete.handler
+    events:
+      - httpApi:
+          path: /mcps/{id}
           method: delete
           authorizer: cognitoAuthorizer
