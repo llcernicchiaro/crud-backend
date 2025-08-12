@@ -6,23 +6,23 @@ import { config } from '../config';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 import { handleConditionalCheckFailedException } from '../utils/errors';
-import { validateAgentId } from '../utils/validation';
+import { validateMcpId } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    logger.info({ message: 'Deleting agent' });
+    logger.info({ message: 'Deleting mcp' });
 
-    const validatedId = validateAgentId(event);
+    const validatedId = validateMcpId(event);
 
     logger.info({
-      message: 'Agent ID validated',
-      agentId: validatedId,
+      message: 'Mcp ID validated',
+      mcpId: validatedId,
     });
 
     try {
       await dynamoDB.send(
         new DeleteCommand({
-          TableName: config.agentsTable,
+          TableName: config.mcpsTable,
           Key: {
             id: validatedId,
           },
@@ -31,8 +31,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       );
 
       logger.info({
-        message: 'Agent deleted successfully',
-        agentId: validatedId,
+        message: 'Mcp deleted successfully',
+        mcpId: validatedId,
       });
 
       return {
