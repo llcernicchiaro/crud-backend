@@ -5,7 +5,7 @@ import { dynamoDB } from '../db/client';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
-import { handleConditionalCheckFailedException } from '../utils/errors';
+import { handleMcpNotFound } from '../utils/errors';
 import { validateMcpId } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
@@ -40,7 +40,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         body: '',
       };
     } catch (error: unknown) {
-      handleConditionalCheckFailedException(error);
+      handleMcpNotFound(error);
       throw error; // Re-throw other unexpected errors
     }
   } catch (error: unknown) {
