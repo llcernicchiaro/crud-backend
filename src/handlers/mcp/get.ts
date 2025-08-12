@@ -40,7 +40,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify(agent),
+      body: JSON.stringify(mcp),
     };
   } catch (error) {
     return errorHandler(error);
