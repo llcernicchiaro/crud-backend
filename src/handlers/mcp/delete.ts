@@ -1,0 +1,49 @@
+import { APIGatewayProxyHandler } from 'aws-lambda';
+import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
+
+import { dynamoDB } from '../db/client';
+import { config } from '../config';
+import { logger } from '../utils/logger';
+import { errorHandler } from '../utils/errorHandler';
+import { handleMcpNotFound } from '../utils/errors';
+import { validateMcpId } from '../utils/validation';
+
+export const handler: APIGatewayProxyHandler = async (event) => {
+  try {
+    logger.info({ message: 'Deleting mcp' });
+
+    const validatedId = validateMcpId(event);
+
+    logger.info({
+      message: 'Mcp ID validated',
+      mcpId: validatedId,
+    });
+
+    try {
+      await dynamoDB.send(
+        new DeleteCommand({
+          TableName: config.mcpsTable,
+          Key: {
+            id: validatedId,
+          },
+          ConditionExpression: 'attribute_exists(id)', // Ensure item exists
+        }),
+      );
+
+      logger.info({
+        message: 'Mcp deleted successfully',
+        mcpId: validatedId,
+      });
+
+      return {
+        statusCode: 204,
+        body: '',
+      };
+    } catch (error: unknown) {
+      handleMcpNotFound(error);
+      throw error; // Re-throw other unexpected errors
+    }
+  } catch (error: unknown) {
+    return errorHandler(error);
+  }
+};
