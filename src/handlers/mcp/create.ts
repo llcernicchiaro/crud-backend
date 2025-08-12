@@ -4,18 +4,18 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { dynamoDB } from '../db/client';
 import { config } from '../config';
-import { Agent, createAgentInputSchema } from '../models/Agent';
+import { Mcp, createMcpInputSchema } from '../models/MCP';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 import { validateBody } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    logger.info({ message: 'Creating new agent' });
+    logger.info({ message: 'Creating new mcp' });
 
-    const validatedData = validateBody(event, createAgentInputSchema);
+    const validatedData = validateBody(event, createMcpInputSchema);
 
-    const agent: Agent = {
+    const mcp: Mcp = {
       id: uuidv4(),
       name: validatedData.name,
       description: validatedData.description,
@@ -27,21 +27,22 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     await dynamoDB.send(
       new PutCommand({
-        TableName: config.agentsTable,
-        Item: agent,
+        TableName: config.mcpsTable,
+        Item: mcp,
       }),
     );
 
     logger.info({
-      message: 'Agent created successfully',
-      agentId: agent.id,
+      message: 'Mcp created successfully',
+      mcpId: mcp.id,
     });
 
     return {
       statusCode: 201,
-      body: JSON.stringify(agent),
+      body: JSON.stringify(mcp),
     };
   } catch (error) {
     return errorHandler(error);
   }
 };
+
