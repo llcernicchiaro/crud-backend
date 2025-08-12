@@ -5,29 +5,29 @@ import { ReturnValue } from '@aws-sdk/client-dynamodb';
 import { config } from '../config';
 import { dynamoDB } from '../db/client';
 import {
-  Agent,
-  UpdateAgentInput,
-  updateAgentInputSchema,
-} from '../models/Agent';
+  Mcp,
+  UpdateMcpInput,
+  updateMcpInputSchema,
+} from '../models/MCP';
 import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 import {
   BadRequestError,
   handleConditionalCheckFailedException,
 } from '../utils/errors';
-import { validateAgentId, validateBody } from '../utils/validation';
+import { validateMcpId, validateBody } from '../utils/validation';
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    logger.info({ message: 'Updating agent' });
+    logger.info({ message: 'Updating mcp' });
 
-    const validatedId = validateAgentId(event);
+    const validatedId = validateMcpId(event);
 
-    logger.info({ message: 'Agent ID validated', agentId: validatedId });
+    logger.info({ message: 'Mcp ID validated', mcpId: validatedId });
 
-    const validatedData: UpdateAgentInput = validateBody(
+    const validatedData: UpdateMcpInput = validateBody(
       event,
-      updateAgentInputSchema,
+      updateMcpInputSchema,
     );
 
     const updateExpressionParts: string[] = [];
@@ -57,7 +57,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const updateExpression = 'SET ' + updateExpressionParts.join(', ');
 
     const params = {
-      TableName: config.agentsTable,
+      TableName: config.mcpsTable,
       Key: {
         id: validatedId,
       },
@@ -72,17 +72,17 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     try {
       const { Attributes } = await dynamoDB.send(new UpdateCommand(params));
-      const updatedAgent: Agent = Attributes as Agent;
+      const updatedMcp: Mcp = Attributes as Mcp;
 
       logger.info({
-        message: 'Agent updated successfully',
-        agentId: validatedId,
+        message: 'Mcp updated successfully',
+        mcpId: validatedId,
         updatedFields: validatedData,
       });
 
       return {
         statusCode: 200,
-        body: JSON.stringify(updatedAgent),
+        body: JSON.stringify(updatedMcp),
       };
     } catch (error: unknown) {
       handleConditionalCheckFailedException(error);
@@ -92,3 +92,4 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     return errorHandler(error);
   }
 };
+
