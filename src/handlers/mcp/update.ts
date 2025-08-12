@@ -13,7 +13,7 @@ import { logger } from '../utils/logger';
 import { errorHandler } from '../utils/errorHandler';
 import {
   BadRequestError,
-  handleConditionalCheckFailedException,
+  handleMcpNotFound,
 } from '../utils/errors';
 import { validateMcpId, validateBody } from '../utils/validation';
 
@@ -85,7 +85,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         body: JSON.stringify(updatedMcp),
       };
     } catch (error: unknown) {
-      handleConditionalCheckFailedException(error);
+      handleMcpNotFound(error);
       throw error; // Re-throw other unexpected errors
     }
   } catch (error: unknown) {
